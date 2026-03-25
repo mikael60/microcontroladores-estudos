@@ -1,41 +1,40 @@
-//circuito led usando um resistor LDR, controlando a iluminação dos leds no esp32
+//circuito usando o resistor LDR para medir uma escala de luminosidade com arrays de LED'S
 
-int pinos[9] = {23,22,21,19,18,5,4,2,26};
+#define entrada_analog 4  //pino do esp que le o LDR
+int pinos[8] = {23,22,21,19,18,17,16,2};
 int i;
-
-float minimo = 0;
-float maximo = 4095;
-float valorLDR;
-float luminosidade;
+int minimo = 900;         // Leitura real no escuro
+int maximo = 4000;        // Leitura real na luz forte
+int valorLDR;
+int luminosidade;
 
 void setup() {
-  for(i = 0; i < 9; i++){
-    pinMode(pinos[i], OUTPUT);
+  for(i=0;i<=7;i++){
+    pinMode(pinos[i],OUTPUT);
   }
-  
-  pinMode(35, INPUT);
+  Serial.begin(9600);     // Inicia a comunicação com o PC
 }
 
 void loop() {
-  valorLDR = analogRead(35);
+  valorLDR = analogRead(entrada_analog);
 
-  // Normaliza o valor do LDR para uma escala de 0 a 10
-  luminosidade = ((valorLDR - minimo) / (maximo - minimo)) * 10;
+  // Trava a leitura entre 900 e 4000 para não quebrar a memória do array
+  valorLDR = constrain(valorLDR, minimo, maximo);
 
-  // Inverte (quanto mais escuro, mais LEDs acesos)
-  luminosidade = (luminosidade - 10) * -1;
-
-  // Garante que fique entre 0 e 9
-  if(luminosidade < 0) luminosidade = 0;
-  if(luminosidade > 9) luminosidade = 9;
-
-  for(i = 0; i < 9; i++){
+  // Espreme a escala grande (900-4000) na escala pequena (0-8 LEDs)
+  luminosidade = map(valorLDR, minimo, maximo, 0, 8);
+  
+  for(i=0;i<=7;i++){
     if(i < luminosidade){
       digitalWrite(pinos[i], HIGH);
-    } else {
+    }else{
       digitalWrite(pinos[i], LOW);
     }
   }
-
-  delay(500); // delay geral
+  Serial.print("Leitura LDR: ");
+  Serial.print(valorLDR);
+  Serial.print(" | LEDs acesos: ");
+  Serial.println(luminosidade);
+  
+  delay(200);
 }
